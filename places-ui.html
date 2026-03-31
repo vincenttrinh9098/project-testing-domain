@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Places Search</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f9f7f4;
+      --surface: #ffffff;
+      --text: #1a1814;
+      --muted: #8a877f;
+      --accent: #2d6a4f;
+      --accent-light: #e8f4ee;
+      --closed: #c0392b;
+      --closed-light: #fdecea;
+      --border: #e8e4dc;
+      --radius: 12px;
+      --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 48px 24px;
+    }
+
+    header {
+      max-width: 680px;
+      margin: 0 auto 40px;
+    }
+
+    header h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 2.4rem;
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      margin-bottom: 6px;
+    }
+
+    header p {
+      color: var(--muted);
+      font-size: 0.95rem;
+      font-weight: 300;
+    }
+
+    .search-bar {
+      max-width: 680px;
+      margin: 0 auto 32px;
+      display: flex;
+      gap: 10px;
+    }
+
+    .search-bar input {
+      flex: 1;
+      padding: 14px 18px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      background: var(--surface);
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .search-bar input:focus {
+      border-color: var(--accent);
+    }
+
+    .search-bar input::placeholder { color: var(--muted); }
+
+    .search-bar button {
+      padding: 14px 24px;
+      background: var(--text);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: opacity 0.2s;
+      white-space: nowrap;
+    }
+
+    .search-bar button:hover { opacity: 0.8; }
+    .search-bar button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    #map {
+      max-width: 680px;
+      margin: 0 auto 28px;
+      height: 280px;
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 1.5px solid var(--border);
+      display: none;
+    }
+
+    #status {
+      max-width: 680px;
+      margin: 0 auto 16px;
+      font-size: 0.85rem;
+      color: var(--muted);
+      font-weight: 300;
+    }
+
+    #results {
+      max-width: 680px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .place-card {
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      box-shadow: var(--shadow);
+      cursor: pointer;
+      transition: border-color 0.2s, transform 0.15s;
+      opacity: 0;
+      animation: fadeUp 0.3s forwards;
+    }
+
+    .place-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-1px);
+    }
+
+    .place-card.selected {
+      border-color: var(--accent);
+      background: var(--accent-light);
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .place-index {
+      width: 28px;
+      height: 28px;
+      min-width: 28px;
+      border-radius: 50%;
+      background: var(--text);
+      color: #fff;
+      font-size: 0.75rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 2px;
+    }
+
+    .place-info { flex: 1; }
+
+    .place-name {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.05rem;
+      font-weight: 400;
+      margin-bottom: 4px;
+    }
+
+    .place-address {
+      font-size: 0.83rem;
+      color: var(--muted);
+      font-weight: 300;
+      margin-bottom: 10px;
+      line-height: 1.5;
+    }
+
+    .place-meta {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      font-size: 0.75rem;
+      font-weight: 500;
+      padding: 3px 10px;
+      border-radius: 20px;
+    }
+
+    .badge-open {
+      background: var(--accent-light);
+      color: var(--accent);
+    }
+
+    .badge-closed {
+      background: var(--closed-light);
+      color: var(--closed);
+    }
+
+    .rating {
+      font-size: 0.82rem;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .stars {
+      color: #e6a817;
+      letter-spacing: -1px;
+      font-size: 0.8rem;
+    }
+
+    .empty {
+      text-align: center;
+      padding: 60px 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .empty span {
+      display: block;
+      font-size: 2rem;
+      margin-bottom: 12px;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 60px 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .dot-pulse {
+      display: inline-flex;
+      gap: 5px;
+      margin-top: 12px;
+    }
+
+    .dot-pulse span {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--muted);
+      animation: pulse 1.2s ease-in-out infinite;
+    }
+
+    .dot-pulse span:nth-child(2) { animation-delay: 0.2s; }
+    .dot-pulse span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes pulse {
+      0%, 80%, 100% { transform: scale(0.7); opacity: 0.4; }
+      40% { transform: scale(1); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Find Places</h1>
+    <p>Search powered by Google Places</p>
+  </header>
+
+  <div class="search-bar">
+    <input id="query" type="text" placeholder="e.g. coffee shops in NYC" value="coffee shops in Sacramento"/>
+    <button id="searchBtn" onclick="search()">Search</button>
+  </div>
+
+  <div id="map"></div>
+  <div id="status"></div>
+  <div id="results">
+    <div class="empty"><span>🔍</span>Enter a search to find places</div>
+  </div>
+
+  <!-- Replace with your Google Maps API key -->
+  <script>
+    const MAPS_API_KEY = "AIzaSyBWDgEb271lv5WnDB4c2PKbST6Clqv71rE";
+    let map, markers = [], infoWindows = [];
+
+    function initMap() {
+      map = new google.maps.Map(document.getElementById("map"), {
+        center: { lat: 40.7128, lng: -74.006 },
+        zoom: 12,
+        styles: [
+          { featureType: "poi", stylers: [{ visibility: "off" }] },
+          { featureType: "transit", stylers: [{ visibility: "off" }] },
+          { elementType: "geometry", stylers: [{ color: "#f5f3ef" }] },
+          { featureType: "road", elementType: "geometry", stylers: [{ color: "#ffffff" }] },
+          { featureType: "water", stylers: [{ color: "#cfe0d8" }] },
+        ],
+        disableDefaultUI: true,
+        zoomControl: true,
+      });
+    }
+
+    function starsHTML(rating) {
+      if (!rating) return "";
+      const full = Math.round(rating);
+      return "★".repeat(full) + "☆".repeat(5 - full);
+    }
+
+    function clearMarkers() {
+      markers.forEach(m => m.setMap(null));
+      markers = [];
+      infoWindows.forEach(iw => iw.close());
+      infoWindows = [];
+    }
+
+    function selectCard(index) {
+      document.querySelectorAll(".place-card").forEach((c, i) => {
+        c.classList.toggle("selected", i === index);
+      });
+      infoWindows.forEach(iw => iw.close());
+      if (infoWindows[index]) {
+        infoWindows[index].open(map, markers[index]);
+        map.panTo(markers[index].getPosition());
+      }
+    }
+
+    async function search() {
+      const query = document.getElementById("query").value.trim();
+      if (!query) return;
+
+      const btn = document.getElementById("searchBtn");
+      btn.disabled = true;
+      btn.textContent = "Searching…";
+
+      document.getElementById("results").innerHTML = `
+        <div class="loading">Searching for places
+          <div class="dot-pulse"><span></span><span></span><span></span></div>
+        </div>`;
+      document.getElementById("status").textContent = "";
+
+      try {
+        const res = await fetch(`http://localhost:3000/places?query=${encodeURIComponent(query)}`);
+        const data = await res.json();
+        const places = data.places || [];
+
+        document.getElementById("status").textContent =
+          places.length ? `${places.length} result${places.length > 1 ? "s" : ""} found` : "";
+
+        if (!places.length) {
+          document.getElementById("results").innerHTML =
+            `<div class="empty"><span>😕</span>No places found. Try a different search.</div>`;
+          return;
+        }
+
+        // Show map
+        document.getElementById("map").style.display = "block";
+        clearMarkers();
+
+        const bounds = new google.maps.LatLngBounds();
+
+        document.getElementById("results").innerHTML = places.map((p, i) => `
+          <div class="place-card" style="animation-delay:${i * 40}ms" onclick="selectCard(${i})">
+            <div class="place-index">${i + 1}</div>
+            <div class="place-info">
+              <div class="place-name">${p.name}</div>
+              <div class="place-address">${p.address}</div>
+              <div class="place-meta">
+                ${p.open_now !== undefined
+                  ? `<span class="badge ${p.open_now ? "badge-open" : "badge-closed"}">${p.open_now ? "Open now" : "Closed"}</span>`
+                  : ""}
+                ${p.rating
+                  ? `<span class="rating"><span class="stars">${starsHTML(p.rating)}</span>${p.rating}</span>`
+                  : ""}
+              </div>
+            </div>
+          </div>`).join("");
+
+        // Add map markers
+        places.forEach((p, i) => {
+          if (!p.lat || !p.lng) return;
+          const pos = { lat: p.lat, lng: p.lng };
+          const marker = new google.maps.Marker({
+            position: pos,
+            map,
+            label: { text: String(i + 1), color: "#fff", fontSize: "11px", fontWeight: "500" },
+            icon: {
+              path: google.maps.SymbolPath.CIRCLE,
+              scale: 14,
+              fillColor: "#1a1814",
+              fillOpacity: 1,
+              strokeColor: "#fff",
+              strokeWeight: 2,
+            },
+          });
+
+          const iw = new google.maps.InfoWindow({
+            content: `<div style="font-family:'DM Sans',sans-serif;font-size:13px;padding:4px 2px">
+              <strong>${p.name}</strong><br/>
+              <span style="color:#8a877f">${p.address}</span>
+            </div>`,
+          });
+
+          marker.addListener("click", () => selectCard(i));
+          markers.push(marker);
+          infoWindows.push(iw);
+          bounds.extend(pos);
+        });
+
+        map.fitBounds(bounds);
+
+      } catch (err) {
+        document.getElementById("results").innerHTML =
+          `<div class="empty"><span>⚠️</span>Could not connect to server. Is it running?</div>`;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Search";
+      }
+    }
+
+    // Search on Enter key
+    document.getElementById("query").addEventListener("keydown", e => {
+      if (e.key === "Enter") search();
+    });
+  </script>
+
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBWDgEb271lv5WnDB4c2PKbST6Clqv71rE&callback=initMap" async defer></script>
+</body>
+</html>

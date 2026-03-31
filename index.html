@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Google Places Search</title>
+  <style>
+    body { font-family: monospace; max-width: 500px; margin: 60px auto; padding: 0 20px; }
+    input { width: 100%; padding: 10px; font-size: 16px; box-sizing: border-box; }
+    #results { margin-top: 20px; }
+    .place { padding: 8px 0; border-bottom: 1px solid #eee; }
+  </style>
+</head>
+<body>
+  <h2>Places Search</h2>
+  <input id="search" type="text" placeholder="Search for a place..." />
+  <div id="results"></div>
+
+  <script>
+    const API_KEY = "AIzaSyBWDgEb271lv5WnDB4c2PKbST6Clqv71rE";
+
+    document.getElementById("search").addEventListener("input", async (e) => {
+      const query = e.target.value.trim();
+      if (!query) return (document.getElementById("results").innerHTML = "");
+
+      const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(query)}&key=${API_KEY}`;
+
+      // NOTE: Direct browser calls to Places API are blocked by CORS.
+      // You need a backend proxy. This fetch is for illustration.
+      // Use the Autocomplete widget below for a pure-frontend solution:
+      console.log("Would fetch:", url);
+    });
+  </script>
+
+  <!-- RECOMMENDED: Use the Places Autocomplete widget instead (no CORS issues) -->
+  <hr style="margin-top:40px"/>
+  <h2>Autocomplete (Recommended for frontend)</h2>
+  <input id="autocomplete" type="text" placeholder="Start typing an address..." />
+  <div id="place-details"></div>
+
+  <script>
+    function initAutocomplete() {
+      const input = document.getElementById("autocomplete");
+      const autocomplete = new google.maps.places.Autocomplete(input);
+
+      autocomplete.addListener("place_changed", () => {
+        const place = autocomplete.getPlace();
+        document.getElementById("place-details").innerHTML = `
+          <div class="place"><strong>${place.name}</strong><br/>${place.formatted_address}</div>
+        `;
+        console.log("Full place object:", place);
+      });
+    }
+  </script>
+
+  <!-- Replace YOUR_API_KEY below -->
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBWDgEb271lv5WnDB4c2PKbST6Clqv71rE&libraries=places&callback=initAutocomplete" async defer></script>
+</body>
+</html>
