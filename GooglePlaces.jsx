@@ -4,7 +4,7 @@
 import { useState } from "react";
 import { LoadScript, Autocomplete } from "@react-google-maps/api";
 
-const API_KEY = "AIzaSyBWDgEb271lv5WnDB4c2PKbST6Clqv71rE";
+const API_KEY = "";
 const LIBRARIES = ["places"];
 
 export default function GooglePlaces() {

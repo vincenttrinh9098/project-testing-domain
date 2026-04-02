@@ -5,7 +5,7 @@
 import express from "express";
 
 const app = express();
-const API_KEY = "AIzaSyBWDgEb271lv5WnDB4c2PKbST6Clqv71rE"; // ← paste your key here
+const API_KEY = ""; // ← paste your key here
 
 // Serve the UI
 app.get("/", (req, res) => {
